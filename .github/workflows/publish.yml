@@ -1,9 +1,7 @@
 
 name: Publish
 
-on:
-  push:
-    tags: [ 'v**' ]
+on: workflow_dispatch
 
 jobs:
   publish:
@@ -11,7 +9,8 @@ jobs:
 
     strategy:
       matrix:
-        os: [ macos-latest, ubuntu-latest, windows-latest ]
+        #os: [ macos-latest, ubuntu-latest, windows-latest ]
+        os: [ ubuntu-latest ]
 
     steps:
       - name: Check out Git repository
@@ -38,43 +37,43 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Publish Electron
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_KEY_ISSUER_ID: ${{ secrets.APPLE_API_KEY_ISSUER_ID }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-        run: |
-          npx electron-builder install-app-deps
-          case "${{ matrix.os }}" in
-            macos*)
-              mkdir -p ~/.private_keys
-              echo '${{ secrets.APPLE_API_KEY }}' > ~/.private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
-              npx electron-builder --mac --universal --publish always
-              ;;
-            ubuntu*)
-              sudo snap install snapcraft --classic
-              npx electron-builder --linux appimage --x64 --publish always
-              npx electron-builder --linux snap --x64 --publish always
-              ;;
-            windows*)
-              unset CSC_LINK;
-              unset CSC_KEY_PASSWORD;
-              npx electron-builder --win --x64 --arm64 --publish always
-              ;;
-          esac
+      # - name: Publish Electron
+      #   shell: bash
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
+      #     APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      #     APPLE_API_KEY_ISSUER_ID: ${{ secrets.APPLE_API_KEY_ISSUER_ID }}
+      #     CSC_LINK: ${{ secrets.CSC_LINK }}
+      #     CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      #     WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+      #     WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+      #     SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+      #   run: |
+      #     npx electron-builder install-app-deps
+      #     case "${{ matrix.os }}" in
+      #       macos*)
+      #         mkdir -p ~/.private_keys
+      #         echo '${{ secrets.APPLE_API_KEY }}' > ~/.private_keys/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8
+      #         npx electron-builder --mac --universal --publish always
+      #         ;;
+      #       ubuntu*)
+      #         sudo snap install snapcraft --classic
+      #         npx electron-builder --linux appimage --x64 --publish always
+      #         npx electron-builder --linux snap --x64 --publish always
+      #         ;;
+      #       windows*)
+      #         unset CSC_LINK;
+      #         unset CSC_KEY_PASSWORD;
+      #         npx electron-builder --win --x64 --arm64 --publish always
+      #         ;;
+      #     esac
 
-      - if: startsWith(matrix.os, 'ubuntu')
-        name: Publish Python
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi_api_token }}
-        run: npm run publish python
+      # - if: startsWith(matrix.os, 'ubuntu')
+      #   name: Publish Python
+      #   env:
+      #     TWINE_USERNAME: __token__
+      #     TWINE_PASSWORD: ${{ secrets.pypi_api_token }}
+      #   run: npm run publish python
 
       - if: startsWith(matrix.os, 'ubuntu')
         name: Publish Web
@@ -83,16 +82,16 @@ jobs:
           GITHUB_USER: ${{ secrets.PUBLISH_GITHUB_USER }}
         run: npm run publish web
 
-      - if: startsWith(matrix.os, 'macos')
-        name: Publish cask
-        env:
-          GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
-          GITHUB_USER: ${{ secrets.PUBLISH_GITHUB_USER }}
-        run: npm run publish cask
+      # - if: startsWith(matrix.os, 'macos')
+      #   name: Publish cask
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
+      #     GITHUB_USER: ${{ secrets.PUBLISH_GITHUB_USER }}
+      #   run: npm run publish cask
 
-      - if: startsWith(matrix.os, 'windows')
-        name: Publish winget
-        env:
-          GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
-          GITHUB_USER: ${{ secrets.PUBLISH_GITHUB_USER }}
-        run: npm run publish winget
+      # - if: startsWith(matrix.os, 'windows')
+      #   name: Publish winget
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
+      #     GITHUB_USER: ${{ secrets.PUBLISH_GITHUB_USER }}
+      #   run: npm run publish winget

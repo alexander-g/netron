@@ -8,7 +8,6 @@ host.BrowserHost = class {
         this._navigator = window.navigator;
         this._document = window.document;
         const base = require('./base');
-        this._telemetry = new base.Telemetry(this._window);
         this._window.eval = () => {
             throw new Error('window.eval() not supported.');
         };
@@ -54,63 +53,11 @@ host.BrowserHost = class {
     async view(view) {
         this._view = view;
         const age = async () => {
-            const days = (new Date() - new Date(this._environment.date)) / (24 * 60 * 60 * 1000);
-            if (days > 180) {
-                this.document.body.classList.remove('spinner');
-                this.window.terminate('Please update to the newest version.', 'Download', () => {
-                    const link = this._element('logo-github').href;
-                    this.openURL(link);
-                });
-                return new Promise(() => {});
-            }
-            return Promise.resolve();
         };
         const consent = async () => {
-            if (this._getCookie('consent') || this._getCookie('_ga')) {
-                return;
-            }
-            let consent = true;
-            try {
-                const text = await this._request('https://ipinfo.io/json', { 'Content-Type': 'application/json' }, 'utf-8', null, 2000);
-                const json = JSON.parse(text);
-                const countries = ['AT', 'BE', 'BG', 'HR', 'CZ', 'CY', 'DK', 'EE', 'FI', 'FR', 'DE', 'EL', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL', 'PT', 'SK', 'ES', 'SE', 'GB', 'UK', 'GR', 'EU', 'RO'];
-                if (json && json.country && countries.indexOf(json.country) === -1) {
-                    consent = false;
-                }
-            } catch (error) {
-                // continue regardless of error
-            }
-            if (consent) {
-                this.document.body.classList.remove('spinner');
-                await this._message('This app uses cookies to report errors and anonymous usage information.', 'Accept');
-            }
-            this._setCookie('consent', Date.now().toString(), 30);
         };
         const telemetry = async () => {
-            if (this._environment.packaged) {
-                this._window.addEventListener('error', (event) => {
-                    const error = event instanceof ErrorEvent && event.error && event.error instanceof Error ? event.error : new Error(event && event.message ? event.message : JSON.stringify(event));
-                    this.exception(error, true);
-                });
-                const measurement_id = '848W2NVWVH';
-                const user = this._getCookie('_ga').replace(/^(GA1\.\d\.)*/, '');
-                const session = this._getCookie('_ga' + measurement_id);
-                await this._telemetry.start('G-' + measurement_id, user, session);
-                this._telemetry.set('page_location', this._document.location && this._document.location.href ? this._document.location.href : null);
-                this._telemetry.set('page_title', this._document.title ? this._document.title : null);
-                this._telemetry.set('page_referrer', this._document.referrer ? this._document.referrer : null);
-                this._telemetry.send('page_view', {
-                    app_name: this.type,
-                    app_version: this.version,
-                });
-                this._telemetry.send('scroll', {
-                    percent_scrolled: 90,
-                    app_name: this.type,
-                    app_version: this.version
-                });
-                this._setCookie('_ga', 'GA1.2.' + this._telemetry.get('client_id'), 1200);
-                this._setCookie('_ga' + measurement_id, 'GS1.1.' + this._telemetry.session, 1200);
-            }
+
         };
         const capabilities = async () => {
             const filter = (list) => {
@@ -145,9 +92,6 @@ host.BrowserHost = class {
             }
             return Promise.resolve();
         };
-        await age();
-        await consent();
-        await telemetry();
         await capabilities();
     }
 
@@ -327,15 +271,7 @@ host.BrowserHost = class {
             if (error.context) {
                 context = typeof error.context === 'string' ? error.context : JSON.stringify(error.context);
             }
-            this._telemetry.send('exception', {
-                app_name: this.type,
-                app_version: this.version,
-                error_name: name,
-                error_message: message,
-                error_context: context,
-                error_stack: stack,
-                error_fatal: fatal ? true : false
-            });
+            
         }
     }
 
@@ -343,7 +279,6 @@ host.BrowserHost = class {
         if (name && params) {
             params.app_name = this.type;
             params.app_version = this.version;
-            this._telemetry.send(name, params);
         }
     }
 
@@ -438,7 +373,6 @@ host.BrowserHost = class {
                 }
             }
             context = new host.BrowserHost.Context(this, url, identifier, stream);
-            this._telemetry.set('session_engaged', 1);
         } catch (error) {
             await this.error('Model load request failed.', error.message);
             this._view.show('welcome');
@@ -460,7 +394,6 @@ host.BrowserHost = class {
         const context = new host.BrowserHost.BrowserFileContext(this, file, files);
         try {
             await context.open();
-            this._telemetry.set('session_engaged', 1);
             await this._view.open(context);
             this._view.show(null);
             this.document.title = files[0].name;
@@ -491,7 +424,6 @@ host.BrowserHost = class {
             const buffer = encoder.encode(file.content);
             const stream = new base.BinaryStream(buffer);
             const context = new host.BrowserHost.Context(this, '', identifier, stream);
-            this._telemetry.set('session_engaged', 1);
             try {
                 await this._view.open(context);
                 this.document.title = identifier;
@@ -506,21 +438,9 @@ host.BrowserHost = class {
     }
 
     _setCookie(name, value, days) {
-        this.document.cookie = name + '=; Max-Age=0';
-        const location = this.window.location;
-        const domain = location && location.hostname && location.hostname.indexOf('.') !== -1 ? ';domain=.' + location.hostname.split('.').slice(-2).join('.') : '';
-        const date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-        this.document.cookie = name + "=" + value + domain + ";path=/;expires=" + date.toUTCString();
     }
 
     _getCookie(name) {
-        for (const cookie of this.document.cookie.split(';')) {
-            const entry = cookie.split('=');
-            if (entry[0].trim() === name) {
-                return entry[1].trim();
-            }
-        }
         return '';
     }
 
