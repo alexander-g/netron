@@ -1,9 +1,6 @@
 
 /* eslint-env es2015 */
 
-if (window.location.hostname.endsWith('.github.io')) {
-    window.location.replace('https://netron.app');
-}
 
 window.require = function(id, callback, preload) {
     var name = id.startsWith('./') ? id.substring(2) : id;
