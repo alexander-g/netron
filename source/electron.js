@@ -59,22 +59,6 @@ host.ElectronHost = class {
         electron.ipcRenderer.on('open', (_, data) => {
             this._open(data);
         });
-        const age = async () => {
-            const days = (new Date() - new Date(this._environment.date)) / (24 * 60 * 60 * 1000);
-            if (days > 180) {
-                this._view.show('welcome');
-                this._terminate('Please update to the newest version.', 'Download', () => {
-                    const link = this._element('logo-github').href;
-                    this.openURL(link);
-                });
-                return new Promise(() => {});
-            }
-            return Promise.resolve();
-        };
-        const consent = async () => {
-        };
-        const telemetry = async () => {
-        };
     }
 
     async start() {
@@ -291,40 +275,7 @@ host.ElectronHost = class {
         electron.shell.openExternal(url);
     }
 
-    exception(error, fatal) {
-        if (this._telemetry && error) {
-            try {
-                const name = error.name ? error.name + ': ' : '';
-                const message = error.message ? error.message : JSON.stringify(error);
-                let context = '';
-                let stack = '';
-                if (error.stack) {
-                    const format = (file, line, column) => {
-                        return file.split('\\').join('/').split('/').pop() + ':' + line + ':' + column;
-                    };
-                    const match = error.stack.match(/\n {4}at (.*) \((.*):(\d*):(\d*)\)/);
-                    if (match) {
-                        stack = match[1] + ' (' + format(match[2], match[3], match[4]) + ')';
-                    } else {
-                        const match = error.stack.match(/\n {4}at (.*):(\d*):(\d*)/);
-                        if (match) {
-                            stack = '(' + format(match[1], match[2], match[3]) + ')';
-                        } else {
-                            const match = error.stack.match(/.*\n\s*(.*)\s*/);
-                            if (match) {
-                                stack = match[1];
-                            }
-                        }
-                    }
-                }
-                if (error.context) {
-                    context = typeof error.context === 'string' ? error.context : JSON.stringify(error.context);
-                }
-                
-            } catch (e) {
-                // continue regardless of error
-            }
-        }
+    exception() {
     }
 
     event(name, params) {

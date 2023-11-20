@@ -7,7 +7,6 @@ host.BrowserHost = class {
         this._window = window;
         this._navigator = window.navigator;
         this._document = window.document;
-        const base = require('./base');
         this._window.eval = () => {
             throw new Error('window.eval() not supported.');
         };
@@ -52,13 +51,6 @@ host.BrowserHost = class {
 
     async view(view) {
         this._view = view;
-        const age = async () => {
-        };
-        const consent = async () => {
-        };
-        const telemetry = async () => {
-
-        };
         const capabilities = async () => {
             const filter = (list) => {
                 return list.filter((capability) => {
@@ -233,46 +225,7 @@ host.BrowserHost = class {
         this.window.location = url;
     }
 
-    exception(error, fatal) {
-        if (this._telemetry && error) {
-            const name = error.name ? error.name + ': ' : '';
-            const message = error.message ? error.message : JSON.stringify(error);
-            let context = '';
-            let stack = '';
-            if (error.stack) {
-                const format = (file, line, column) => {
-                    return file.split('\\').join('/').split('/').pop() + ':' + line + ':' + column;
-                };
-                const match = error.stack.match(/\n {4}at (.*) \((.*):(\d*):(\d*)\)/);
-                if (match) {
-                    stack = match[1] + ' (' + format(match[2], match[3], match[4]) + ')';
-                } else {
-                    const match = error.stack.match(/\n {4}at (.*):(\d*):(\d*)/);
-                    if (match) {
-                        stack = '(' + format(match[1], match[2], match[3]) + ')';
-                    } else {
-                        const match = error.stack.match(/\n {4}at (.*)\((.*)\)/);
-                        if (match) {
-                            stack = '(' + format(match[1], match[2], match[3]) + ')';
-                        } else {
-                            const match = error.stack.match(/\s*@\s*(.*):(.*):(.*)/);
-                            if (match) {
-                                stack = '(' + format(match[1], match[2], match[3]) + ')';
-                            } else {
-                                const match = error.stack.match(/.*\n\s*(.*)\s*/);
-                                if (match) {
-                                    stack = match[1];
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (error.context) {
-                context = typeof error.context === 'string' ? error.context : JSON.stringify(error.context);
-            }
-            
-        }
+    exception() {
     }
 
     event(name, params) {
@@ -437,10 +390,10 @@ host.BrowserHost = class {
         }
     }
 
-    _setCookie(name, value, days) {
+    _setCookie() {
     }
 
-    _getCookie(name) {
+    _getCookie() {
         return '';
     }
 
