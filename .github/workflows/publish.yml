@@ -78,7 +78,7 @@ jobs:
       - if: startsWith(matrix.os, 'ubuntu')
         name: Publish Web
         env:
-          GITHUB_TOKEN: ${{ secrets.PUBLISH_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_USER: ${{ secrets.PUBLISH_GITHUB_USER }}
         run: npm run publish web
 
